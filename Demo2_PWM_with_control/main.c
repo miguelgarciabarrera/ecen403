@@ -61,10 +61,25 @@ int main(){
         	 Xil_Out32((MY_PWM+4), duty_cycle);
         	 Xil_Out32((MY_PWM+8), duty_cycle);
         	 Xil_Out32((MY_PWM+12), duty_cycle);
+        	 xil_printf("\nMAX speed reached \r \n");
         	 sleep(3);
 
         }
-        else
+
+        else if(duty_cycle > 128){
+                	//usleep(20);
+              duty_cycle++;
+
+        			//Xil_Out32 ~ write duty_cycle to MY_PWM memory address
+        	   Xil_Out32(MY_PWM, duty_cycle);
+        	   Xil_Out32((MY_PWM+4), duty_cycle);
+        	   Xil_Out32((MY_PWM+8), duty_cycle);
+        	   Xil_Out32((MY_PWM+12), duty_cycle);
+        	   usleep(800);
+        	   xil_printf("Value of speed: %d \r \n",duty_cycle);
+        }
+
+        else {
         	//usleep(20);
         	duty_cycle++;
 
@@ -73,8 +88,9 @@ int main(){
 			Xil_Out32((MY_PWM+4), duty_cycle);
 			Xil_Out32((MY_PWM+8), duty_cycle);
 			Xil_Out32((MY_PWM+12), duty_cycle);
-			usleep(200000);
-
+			usleep(100000);
+			xil_printf("Value of speed: %d \r \n",duty_cycle);
+        }
         // frequency = 65k. Then, to fully go over 1 period in a certain time t,
         // multiply time t in seconds times 65k.
         // example, if desired completion of cycle is 5 seconds,
