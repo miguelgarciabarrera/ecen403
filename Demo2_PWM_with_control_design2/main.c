@@ -9,7 +9,7 @@ Terminal Settings:
    -Parity: no
    -Stop bits: 1
 
-4/28/8
+4/30/8 Final Iteration
 Author: Miguel Garcia-Barrera
 ECEN 403 - Battlebot
 
@@ -21,6 +21,7 @@ Run as --> Launch on Hardware (SDB)
 #include "sleep.h"
 #include <xgpio.h>
 #include "platform.h"
+#include <stdio.h>
 
 #define MY_PWM 0x43C00000 //This value is found in the Address editor tab in Vivado (next to Diagram tab)
 
@@ -53,9 +54,11 @@ int main(){
      init_platform();
 
     while(1){
-
+    	// read input from channel 1 of axi_gpio_0 (buttons) and pass that data to "button_data" variable
+    	button_data = XGpio_DiscreteRead(&input, 1);
     	switch_data = XGpio_DiscreteRead(&input, 2); // read switch input and store data in variable
 
+ /*
     	if(switch_data == 0b0000){
         	duty_cycle = 0;
         	Xil_Out32(MY_PWM, duty_cycle);
@@ -65,15 +68,15 @@ int main(){
         	usleep(200000);   // implement interrupt?
         	xil_printf("Value of speed: %d \r \n",duty_cycle);
         }
-
-    	else if(switch_data == 0b0001){
+*/
+    	if(switch_data == 0b0001){
         	duty_cycle = 5;
         	Xil_Out32(MY_PWM, duty_cycle);
         	Xil_Out32((MY_PWM+4), duty_cycle);
         	Xil_Out32((MY_PWM+8), duty_cycle);
         	Xil_Out32((MY_PWM+12), duty_cycle);
         	usleep(200000);
-        	xil_printf("Value of speed: %d \r \n",duty_cycle);
+        	xil_printf("Speed fixed: %d \r \n",duty_cycle);
         }
 
         else if(switch_data == 0b0010){
@@ -84,7 +87,7 @@ int main(){
        	    Xil_Out32((MY_PWM+8), duty_cycle);
         	Xil_Out32((MY_PWM+12), duty_cycle);
         	usleep(200000);
-        	xil_printf("Value of speed: %d \r \n",duty_cycle);
+        	xil_printf("Speed fixed: %d \r \n",duty_cycle);
         }
 
         else if(switch_data == 0b0100){
@@ -95,7 +98,7 @@ int main(){
        	    Xil_Out32((MY_PWM+8), duty_cycle);
         	Xil_Out32((MY_PWM+12), duty_cycle);
         	usleep(200000);
-        	xil_printf("Value of speed: %d \r \n",duty_cycle);
+        	xil_printf("Speed fixed: %d \r \n",duty_cycle);
         }
 
         else if(switch_data == 0b1000){
@@ -106,12 +109,84 @@ int main(){
        	    Xil_Out32((MY_PWM+8), duty_cycle);
         	Xil_Out32((MY_PWM+12), duty_cycle);
         	usleep(200000);
-        	xil_printf("Value of speed: %d \r \n",duty_cycle);
+        	xil_printf("Speed fixed: %d \r \n",duty_cycle);
+        }
+
+        else if(button_data == 0b0001){ // button 0 (R18) pressed
+           duty_cycle++;
+           // increase speed more quickly (controlled with usleep fxn)
+      	   Xil_Out32(MY_PWM, duty_cycle);
+      	   Xil_Out32((MY_PWM+4), duty_cycle);
+      	   Xil_Out32((MY_PWM+8), duty_cycle);
+      	   Xil_Out32((MY_PWM+12), duty_cycle);
+      	   usleep(200);
+      	   xil_printf("Accelerating: %d \r \n",duty_cycle);
+      	   	   if(duty_cycle == 1024){
+      	   		   xil_printf("MAX speed reached - STOP acceleration \r \n");
+      	   		   sleep(3);   // instead of delay, use "getchar" version of pause
+      	   	   }
+        }
+
+        else if(button_data == 0b0010){ // button 1 (P16) pressed
+           duty_cycle++;
+           // increase speed very slowly (controlled with usleep fxn)
+      	   Xil_Out32(MY_PWM, duty_cycle);
+      	   Xil_Out32((MY_PWM+4), duty_cycle);
+      	   Xil_Out32((MY_PWM+8), duty_cycle);
+      	   Xil_Out32((MY_PWM+12), duty_cycle);
+      	   usleep(200000);
+      	   xil_printf("Accelerating: %d \r \n",duty_cycle);
+      	   	   if(duty_cycle == 1024){
+      	   		   xil_printf("MAX speed reached - STOP acceleration \r \n");
+      	   		   sleep(3);
+      	   	   }
+        }
+
+        else if(button_data == 0b0100){ // button 2 (V16) pressed
+           duty_cycle--;
+           //  decrease speed very slowly
+      	   Xil_Out32(MY_PWM, duty_cycle);
+      	   Xil_Out32((MY_PWM+4), duty_cycle);
+      	   Xil_Out32((MY_PWM+8), duty_cycle);
+      	   Xil_Out32((MY_PWM+12), duty_cycle);
+      	   usleep(200000);
+      	   xil_printf("Slowing down: %d \r \n",duty_cycle);
+  	   	   	   if(duty_cycle == 0){
+  	   	   		   xil_printf("MIN speed reached - STOP deceleration or go in reverse \r \n");
+  	   	   		   sleep(2);
+  	   	   	   }
+        }
+
+        else if(button_data == 0b1000){ // button 3 (Y16) pressed
+           duty_cycle--;
+           //  decrease speed more quickly
+      	   Xil_Out32(MY_PWM, duty_cycle);
+      	   Xil_Out32((MY_PWM+4), duty_cycle);
+      	   Xil_Out32((MY_PWM+8), duty_cycle);
+      	   Xil_Out32((MY_PWM+12), duty_cycle);
+      	   usleep(200);
+      	   xil_printf("Slowing down: %d \r \n",duty_cycle);
+  	   	   	   if(duty_cycle == 0){
+  	   	   		   xil_printf("MIN speed reached - STOP deceleration or go in reverse \r \n");
+  	   	   		   sleep(2);
+  	   	   	   }
+        }
+
+    	// The Kill Switch = all switches HIGH -- not working as of May1
+        else if((switch_data == 0b1000) & (switch_data == 0b0100)){
+           duty_cycle = 0;
+      	   Xil_Out32(MY_PWM, duty_cycle);
+      	   Xil_Out32((MY_PWM+4), duty_cycle);
+      	   Xil_Out32((MY_PWM+8), duty_cycle);
+      	   Xil_Out32((MY_PWM+12), duty_cycle);
+      	   usleep(200);
+      	   xil_printf("Kill Switch Triggered - Shutting down \r \n");
+  	   	   sleep(40);
         }
 
         else {
         	usleep(200000);
-        	xil_printf("ERROR: more than 1 speed selected\n\r");
+        	xil_printf("AUTOPILOT ON - speed : %d \r \n",duty_cycle); // add on? run highest speed
         }
 
 
